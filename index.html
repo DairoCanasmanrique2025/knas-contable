@@ -1,0 +1,2982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f766e">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f766e">
+    <title>Sistema Contable KÑAS</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --primary-dark: #134e4a;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+        }
+        
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+            min-height: 100vh;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .app-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .backup-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .backup-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+        
+        .entity-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .entity-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: transparent;
+            color: white;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .entity-btn.active {
+            background: white;
+            color: var(--primary);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav-tab {
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-600);
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .content {
+            padding: 16px;
+            background: var(--gray-50);
+            min-height: calc(100vh - 180px);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--gray-200);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(15, 118, 110, 0.3);
+        }
+        
+        .btn-primary:active {
+            background: var(--primary-dark);
+            transform: translateY(1px);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-600);
+            color: white;
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .item-card {
+            padding: 14px;
+            background: var(--gray-50);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s;
+        }
+        
+        .item-card:active {
+            transform: scale(0.98);
+        }
+        
+        .item-card.low-stock {
+            border-left-color: var(--danger);
+            background: #fef2f2;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        
+        .item-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .item-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .item-detail {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-top: 4px;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            animation: fadeIn 0.2s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--gray-600);
+            line-height: 1;
+            transition: all 0.2s;
+        }
+        
+        .close-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+        }
+        
+        .stat-card.accent {
+            background: linear-gradient(135deg, var(--accent) 0%, #d97706 100%);
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .entry-line {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .entry-line select,
+        .entry-line input {
+            flex: 1;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--gray-600);
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .info-box {
+            background: var(--gray-100);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .info-box.success {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+        
+        .info-box.warning {
+            background: #fffbeb;
+            color: #92400e;
+        }
+        
+        .menu-item {
+            padding: 14px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+        
+        .menu-item:active {
+            transform: scale(0.98);
+            border-color: var(--primary);
+        }
+        
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gray-100);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .quick-action {
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+        
+        .quick-action:active {
+            transform: scale(0.98);
+            background: var(--primary-dark);
+        }
+        
+        .quick-icon {
+            font-size: 28px;
+        }
+        
+        .sale-form-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+            background: var(--gray-50);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: var(--gray-100);
+            padding: 10px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--gray-300);
+        }
+        
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: var(--gray-100);
+            border: 2px dashed var(--gray-300);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        
+        .file-input-label:hover {
+            border-color: var(--primary);
+            background: rgba(15, 118, 110, 0.05);
+        }
+    </style>
+
+<style>
+.header {
+    background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('header.png');
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+</style>
+
+
+<style>
+.header {
+    padding: 20px;
+}
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.header-photo {
+    width: 120px;
+    height: auto;
+    border-radius: 8px;
+}
+</style>
+
+</head>
+<body>
+<div style="display:flex;align-items:center;gap:20px;padding:20px;border-bottom:2px solid #333;">
+  <img src="header.png" alt="KÑAS" style="width:150px;height:auto;border-radius:10px;">
+  <h1 style="margin:0;font-size:32px;">Sistema Contable KÑAS</h1>
+</div>
+
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const DEFAULT_ACCOUNTS = {
+            '1000': { code: '1000', name: 'Efectivo', type: 'activo', parent: null },
+            '1001': { code: '1001', name: 'Banco', type: 'activo', parent: null },
+            '1100': { code: '1100', name: 'Cuentas por Cobrar', type: 'activo', parent: null },
+            '1200': { code: '1200', name: 'Inventario', type: 'activo', parent: null },
+            '1500': { code: '1500', name: 'Vehículos', type: 'activo', parent: null },
+            '1501': { code: '1501', name: 'Depreciación Acumulada Vehículos', type: 'activo_contra', parent: '1500' },
+            '1600': { code: '1600', name: 'Equipo de Negocio', type: 'activo', parent: null },
+            '1601': { code: '1601', name: 'Depreciación Acumulada Equipo', type: 'activo_contra', parent: '1600' },
+            '2000': { code: '2000', name: 'Cuentas por Pagar', type: 'pasivo', parent: null },
+            '2100': { code: '2100', name: 'Préstamos por Pagar', type: 'pasivo', parent: null },
+            '2101': { code: '2101', name: 'Intereses por Pagar', type: 'pasivo', parent: null },
+            '3000': { code: '3000', name: 'Capital Personal', type: 'capital', parent: null },
+            '3100': { code: '3100', name: 'Utilidades Retenidas', type: 'capital', parent: null },
+            '4000': { code: '4000', name: 'Ventas de Pan', type: 'ingreso', parent: null },
+            '4001': { code: '4001', name: 'Ventas de Pasteles', type: 'ingreso', parent: null },
+            '4100': { code: '4100', name: 'Ingresos por Salario', type: 'ingreso', parent: null },
+            '4200': { code: '4200', name: 'Otros Ingresos', type: 'ingreso', parent: null },
+            '4300': { code: '4300', name: 'Ingresos por Intereses', type: 'ingreso', parent: null },
+            '5000': { code: '5000', name: 'Costo de Ventas', type: 'gasto', parent: null },
+            '5100': { code: '5100', name: 'Gastos de Alimentación', type: 'gasto', parent: null },
+            '5200': { code: '5200', name: 'Gastos de Transporte', type: 'gasto', parent: null },
+            '5300': { code: '5300', name: 'Servicios (Luz, Agua, Gas)', type: 'gasto', parent: null },
+            '5400': { code: '5400', name: 'Alquiler', type: 'gasto', parent: null },
+            '5500': { code: '5500', name: 'Salarios', type: 'gasto', parent: null },
+            '5600': { code: '5600', name: 'Gastos de Depreciación', type: 'gasto', parent: null },
+            '5700': { code: '5700', name: 'Gastos por Intereses', type: 'gasto', parent: null },
+            '5800': { code: '5800', name: 'Otros Gastos', type: 'gasto', parent: null },
+        };
+        
+        function App() {
+            const [currentEntity, setCurrentEntity] = useState('personal');
+            const [currentTab, setCurrentTab] = useState('dashboard');
+            const [accounts, setAccounts] = useState({});
+            const [transactions, setTransactions] = useState([]);
+            const [loans, setLoans] = useState([]);
+            
+            // Nuevas entidades para panadería
+            const [inventory, setInventory] = useState([]);
+            const [suppliers, setSuppliers] = useState([]);
+            const [customers, setCustomers] = useState([]);
+            const [sales, setSales] = useState([]);
+            
+            const [showModal, setShowModal] = useState(null);
+            
+            useEffect(() => {
+                loadData();
+            }, [currentEntity]);
+            
+            const loadData = () => {
+                const key = `accounting_${currentEntity}`;
+                const saved = localStorage.getItem(key);
+                
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    setAccounts(data.accounts || DEFAULT_ACCOUNTS);
+                    setTransactions(data.transactions || []);
+                    setLoans(data.loans || []);
+                    setInventory(data.inventory || []);
+                    setSuppliers(data.suppliers || []);
+                    setCustomers(data.customers || []);
+                    setSales(data.sales || []);
+                } else {
+                    setAccounts(DEFAULT_ACCOUNTS);
+                    setTransactions([]);
+                    setLoans([]);
+                    setInventory([]);
+                    setSuppliers([]);
+                    setCustomers([]);
+                    setSales([]);
+                }
+            };
+            
+            const saveData = (newTransactions, newLoans, newAccounts, newInventory, newSuppliers, newCustomers, newSales) => {
+                const key = `accounting_${currentEntity}`;
+                const data = {
+                    accounts: newAccounts || accounts,
+                    transactions: newTransactions || transactions,
+                    loans: newLoans || loans,
+                    inventory: newInventory || inventory,
+                    suppliers: newSuppliers || suppliers,
+                    customers: newCustomers || customers,
+                    sales: newSales || sales
+                };
+                localStorage.setItem(key, JSON.stringify(data));
+            };
+            
+            const addTransaction = (transaction) => {
+                const newTransaction = {
+                    ...transaction,
+                    id: Date.now(),
+                    entity: currentEntity,
+                    date: transaction.date || new Date().toISOString().split('T')[0]
+                };
+                const updated = [newTransaction, ...transactions];
+                setTransactions(updated);
+                saveData(updated, loans, accounts, inventory, suppliers, customers, sales);
+            };
+            
+            const addLoan = (loan) => {
+                const newLoan = {
+                    ...loan,
+                    id: Date.now(),
+                    entity: currentEntity,
+                    balance: loan.amount,
+                    payments: []
+                };
+                const updated = [...loans, newLoan];
+                setLoans(updated);
+                saveData(transactions, updated, accounts, inventory, suppliers, customers, sales);
+            };
+            
+            const makePayment = (loanId, payment) => {
+                const updated = loans.map(loan => {
+                    if (loan.id === loanId) {
+                        const interest = (loan.balance * loan.interestRate / 100 / 12);
+                        const principal = payment - interest;
+                        return {
+                            ...loan,
+                            balance: Math.max(0, loan.balance - principal),
+                            payments: [...loan.payments, {
+                                date: new Date().toISOString().split('T')[0],
+                                amount: payment,
+                                interest,
+                                principal
+                            }]
+                        };
+                    }
+                    return loan;
+                });
+                setLoans(updated);
+                saveData(transactions, updated, accounts, inventory, suppliers, customers, sales);
+            };
+            
+            const addInventoryItem = (item) => {
+                const newItem = {
+                    ...item,
+                    id: Date.now(),
+                    entity: currentEntity
+                };
+                const updated = [...inventory, newItem];
+                setInventory(updated);
+                saveData(transactions, loans, accounts, updated, suppliers, customers, sales);
+            };
+            
+            const updateInventoryStock = (itemId, quantity, type) => {
+                const updated = inventory.map(item => {
+                    if (item.id === itemId) {
+                        const newStock = type === 'add' ? item.stock + quantity : item.stock - quantity;
+                        return { ...item, stock: Math.max(0, newStock) };
+                    }
+                    return item;
+                });
+                setInventory(updated);
+                saveData(transactions, loans, accounts, updated, suppliers, customers, sales);
+            };
+            
+            const addSupplier = (supplier) => {
+                const newSupplier = {
+                    ...supplier,
+                    id: Date.now(),
+                    entity: currentEntity,
+                    balance: 0
+                };
+                const updated = [...suppliers, newSupplier];
+                setSuppliers(updated);
+                saveData(transactions, loans, accounts, inventory, updated, customers, sales);
+            };
+            
+            const addCustomer = (customer) => {
+                const newCustomer = {
+                    ...customer,
+                    id: Date.now(),
+                    entity: currentEntity,
+                    balance: 0
+                };
+                const updated = [...customers, newCustomer];
+                setCustomers(updated);
+                saveData(transactions, loans, accounts, inventory, suppliers, updated, sales);
+            };
+            
+            const addSale = (sale) => {
+                const newSale = {
+                    ...sale,
+                    id: Date.now(),
+                    entity: currentEntity,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                // Actualizar inventario
+                const updatedInventory = [...inventory];
+                sale.items.forEach(saleItem => {
+                    const invIndex = updatedInventory.findIndex(i => i.id === saleItem.productId);
+                    if (invIndex !== -1) {
+                        updatedInventory[invIndex].stock -= saleItem.quantity;
+                    }
+                });
+                
+                // Actualizar cliente si es a crédito
+                let updatedCustomers = [...customers];
+                if (sale.paymentType === 'credito' && sale.customerId) {
+                    updatedCustomers = customers.map(c => {
+                        if (c.id === sale.customerId) {
+                            return { ...c, balance: c.balance + sale.total };
+                        }
+                        return c;
+                    });
+                }
+                
+                // Crear asiento contable
+                const entries = [];
+                if (sale.paymentType === 'efectivo') {
+                    entries.push({ account: '1000', type: 'debito', amount: sale.total });
+                } else if (sale.paymentType === 'banco') {
+                    entries.push({ account: '1001', type: 'debito', amount: sale.total });
+                } else if (sale.paymentType === 'credito') {
+                    entries.push({ account: '1100', type: 'debito', amount: sale.total });
+                }
+                entries.push({ account: '4000', type: 'credito', amount: sale.total });
+                
+                // Agregar costo de ventas
+                const totalCost = sale.items.reduce((sum, item) => {
+                    const product = inventory.find(p => p.id === item.productId);
+                    return sum + (product?.cost || 0) * item.quantity;
+                }, 0);
+                
+                if (totalCost > 0) {
+                    entries.push({ account: '5000', type: 'debito', amount: totalCost });
+                    entries.push({ account: '1200', type: 'credito', amount: totalCost });
+                }
+                
+                const transaction = {
+                    description: `Venta #${newSale.id} - ${sale.customerName || 'Cliente'}`,
+                    date: newSale.date,
+                    entries
+                };
+                
+                const updatedTransactions = [{ ...transaction, id: Date.now() }, ...transactions];
+                const updatedSales = [newSale, ...sales];
+                
+                setInventory(updatedInventory);
+                setCustomers(updatedCustomers);
+                setTransactions(updatedTransactions);
+                setSales(updatedSales);
+                
+                saveData(updatedTransactions, loans, accounts, updatedInventory, suppliers, updatedCustomers, updatedSales);
+            };
+            
+            const calculateBalance = (accountCode) => {
+                const account = accounts[accountCode];
+                if (!account) return 0;
+                
+                let balance = 0;
+                transactions.forEach(trans => {
+                    trans.entries.forEach(entry => {
+                        if (entry.account === accountCode) {
+                            if (entry.type === 'debito') {
+                                if (account.type === 'activo' || account.type === 'gasto') {
+                                    balance += entry.amount;
+                                } else {
+                                    balance -= entry.amount;
+                                }
+                            } else {
+                                if (account.type === 'activo' || account.type === 'gasto') {
+                                    balance -= entry.amount;
+                                } else {
+                                    balance += entry.amount;
+                                }
+                            }
+                        }
+                    });
+                });
+                
+                return balance;
+            };
+            
+            const getBalanceSheet = () => {
+                const activos = {};
+                const pasivos = {};
+                const capital = {};
+                
+                Object.keys(accounts).forEach(code => {
+                    const account = accounts[code];
+                    const balance = calculateBalance(code);
+                    
+                    if (account.type === 'activo' && balance !== 0) {
+                        activos[code] = { ...account, balance };
+                    } else if (account.type === 'activo_contra' && balance !== 0) {
+                        activos[code] = { ...account, balance };
+                    } else if (account.type === 'pasivo' && balance !== 0) {
+                        pasivos[code] = { ...account, balance };
+                    } else if (account.type === 'capital' && balance !== 0) {
+                        capital[code] = { ...account, balance };
+                    }
+                });
+                
+                return { activos, pasivos, capital };
+            };
+            
+            const getIncomeStatement = () => {
+                const ingresos = {};
+                const gastos = {};
+                
+                Object.keys(accounts).forEach(code => {
+                    const account = accounts[code];
+                    const balance = calculateBalance(code);
+                    
+                    if (account.type === 'ingreso' && balance !== 0) {
+                        ingresos[code] = { ...account, balance };
+                    } else if (account.type === 'gasto' && balance !== 0) {
+                        gastos[code] = { ...account, balance };
+                    }
+                });
+                
+                return { ingresos, gastos };
+            };
+            
+            const exportData = () => {
+                const data = {
+                    entity: currentEntity,
+                    exportDate: new Date().toISOString(),
+                    accounts,
+                    transactions,
+                    loans,
+                    inventory,
+                    suppliers,
+                    customers,
+                    sales
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `contabilidad_${currentEntity}_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            
+            const importData = (file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (confirm(`¿Importar datos de "${data.entity}"? Esto sobrescribirá los datos actuales.`)) {
+                            setAccounts(data.accounts || DEFAULT_ACCOUNTS);
+                            setTransactions(data.transactions || []);
+                            setLoans(data.loans || []);
+                            setInventory(data.inventory || []);
+                            setSuppliers(data.suppliers || []);
+                            setCustomers(data.customers || []);
+                            setSales(data.sales || []);
+                            saveData(
+                                data.transactions || [],
+                                data.loans || [],
+                                data.accounts || DEFAULT_ACCOUNTS,
+                                data.inventory || [],
+                                data.suppliers || [],
+                                data.customers || [],
+                                data.sales || []
+                            );
+                            alert('¡Datos importados exitosamente!');
+                        }
+                    } catch (error) {
+                        alert('Error al importar el archivo.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            const shareWhatsApp = () => {
+                const { activos, pasivos } = getBalanceSheet();
+                const { ingresos, gastos } = getIncomeStatement();
+                
+                const totalActivos = Object.values(activos).reduce((sum, acc) => {
+                    if (acc.type === 'activo_contra') return sum - acc.balance;
+                    return sum + acc.balance;
+                }, 0);
+                
+                const totalPasivos = Object.values(pasivos).reduce((sum, acc) => sum + acc.balance, 0);
+                const totalIngresos = Object.values(ingresos).reduce((sum, acc) => sum + acc.balance, 0);
+                const totalGastos = Object.values(gastos).reduce((sum, acc) => sum + acc.balance, 0);
+                const utilidadNeta = totalIngresos - totalGastos;
+                
+                const text = `📊 *Resumen Contable - ${currentEntity === 'personal' ? 'Personal' : 'Negocio'}*
+                
+💰 Total Activos: $${totalActivos.toFixed(2)}
+📊 Total Pasivos: $${totalPasivos.toFixed(2)}
+📈 Ingresos: $${totalIngresos.toFixed(2)}
+📉 Gastos: $${totalGastos.toFixed(2)}
+✨ Utilidad Neta: $${utilidadNeta.toFixed(2)}
+
+_Generado con Sistema Contable KÑAS_`;
+                
+                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            };
+            
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <div className="header-top">
+                            <h1>💼 Sistema Contable KÑAS</h1>
+                            <button className="backup-btn" onClick={() => setShowModal('backup')}>
+                                ⚙️
+                            </button>
+                        </div>
+                        <div className="entity-selector">
+                            <button 
+                                className={`entity-btn ${currentEntity === 'personal' ? 'active' : ''}`}
+                                onClick={() => setCurrentEntity('personal')}
+                            >
+                                👤 Personal
+                            </button>
+                            <button 
+                                className={`entity-btn ${currentEntity === 'panaderia' ? 'active' : ''}`}
+                                onClick={() => setCurrentEntity('panaderia')}
+                            >
+                                🏢 Negocio
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="nav-tabs">
+                        <button 
+                            className={`nav-tab ${currentTab === 'dashboard' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('dashboard')}
+                        >
+                            📊 Inicio
+                        </button>
+                        
+                        {currentEntity === 'panaderia' && (
+                            <>
+                                <button 
+                                    className={`nav-tab ${currentTab === 'sales' ? 'active' : ''}`}
+                                    onClick={() => setCurrentTab('sales')}
+                                >
+                                    💵 Ventas
+                                </button>
+                                <button 
+                                    className={`nav-tab ${currentTab === 'inventory' ? 'active' : ''}`}
+                                    onClick={() => setCurrentTab('inventory')}
+                                >
+                                    📦 Inventario
+                                </button>
+                                <button 
+                                    className={`nav-tab ${currentTab === 'customers' ? 'active' : ''}`}
+                                    onClick={() => setCurrentTab('customers')}
+                                >
+                                    👥 Clientes
+                                </button>
+                                <button 
+                                    className={`nav-tab ${currentTab === 'suppliers' ? 'active' : ''}`}
+                                    onClick={() => setCurrentTab('suppliers')}
+                                >
+                                    🏭 Proveedores
+                                </button>
+                            </>
+                        )}
+                        
+                        <button 
+                            className={`nav-tab ${currentTab === 'transactions' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('transactions')}
+                        >
+                            📝 Transacciones
+                        </button>
+                        <button 
+                            className={`nav-tab ${currentTab === 'loans' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('loans')}
+                        >
+                            💳 Préstamos
+                        </button>
+                        <button 
+                            className={`nav-tab ${currentTab === 'reports' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('reports')}
+                        >
+                            📈 Reportes
+                        </button>
+                    </div>
+                    
+                    <div className="content">
+                        {currentTab === 'dashboard' && (
+                            <Dashboard 
+                                currentEntity={currentEntity}
+                                accounts={accounts}
+                                transactions={transactions}
+                                loans={loans}
+                                inventory={inventory}
+                                customers={customers}
+                                sales={sales}
+                                calculateBalance={calculateBalance}
+                                getBalanceSheet={getBalanceSheet}
+                                getIncomeStatement={getIncomeStatement}
+                                setCurrentTab={setCurrentTab}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'sales' && (
+                            <Sales 
+                                sales={sales}
+                                inventory={inventory}
+                                customers={customers}
+                                addSale={addSale}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'inventory' && (
+                            <Inventory 
+                                inventory={inventory}
+                                addInventoryItem={addInventoryItem}
+                                updateInventoryStock={updateInventoryStock}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'customers' && (
+                            <Customers 
+                                customers={customers}
+                                addCustomer={addCustomer}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'suppliers' && (
+                            <Suppliers 
+                                suppliers={suppliers}
+                                addSupplier={addSupplier}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'transactions' && (
+                            <Transactions 
+                                accounts={accounts}
+                                transactions={transactions}
+                                addTransaction={addTransaction}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'loans' && (
+                            <Loans 
+                                loans={loans}
+                                addLoan={addLoan}
+                                makePayment={makePayment}
+                                showModal={showModal}
+                                setShowModal={setShowModal}
+                            />
+                        )}
+                        
+                        {currentTab === 'reports' && (
+                            <Reports 
+                                accounts={accounts}
+                                getBalanceSheet={getBalanceSheet}
+                                getIncomeStatement={getIncomeStatement}
+                                currentEntity={currentEntity}
+                            />
+                        )}
+                    </div>
+                    
+                    {showModal === 'backup' && (
+                        <BackupModal 
+                            onClose={() => setShowModal(null)}
+                            exportData={exportData}
+                            importData={importData}
+                            shareWhatsApp={shareWhatsApp}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function Dashboard({ currentEntity, accounts, transactions, loans, inventory, customers, sales, calculateBalance, getBalanceSheet, getIncomeStatement, setCurrentTab, setShowModal }) {
+            const { activos, pasivos } = getBalanceSheet();
+            const { ingresos, gastos } = getIncomeStatement();
+            
+            const totalActivos = Object.values(activos).reduce((sum, acc) => {
+                if (acc.type === 'activo_contra') return sum - acc.balance;
+                return sum + acc.balance;
+            }, 0);
+            
+            const totalPasivos = Object.values(pasivos).reduce((sum, acc) => sum + acc.balance, 0);
+            const totalIngresos = Object.values(ingresos).reduce((sum, acc) => sum + acc.balance, 0);
+            const totalGastos = Object.values(gastos).reduce((sum, acc) => sum + acc.balance, 0);
+            const utilidadNeta = totalIngresos - totalGastos;
+            
+            const efectivo = calculateBalance('1000');
+            const banco = calculateBalance('1001');
+            const totalEfectivo = efectivo + banco;
+            
+            const lowStockItems = inventory.filter(item => item.stock <= item.minStock);
+            const totalCustomerBalance = customers.reduce((sum, c) => sum + c.balance, 0);
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(s => s.date === today);
+            const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
+            
+            return (
+                <div>
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Efectivo Total</div>
+                            <div className="stat-value">${totalEfectivo.toFixed(2)}</div>
+                        </div>
+                        <div className="stat-card accent">
+                            <div className="stat-label">Utilidad Neta</div>
+                            <div className="stat-value">${utilidadNeta.toFixed(2)}</div>
+                        </div>
+                        <div className="stat-card success">
+                            <div className="stat-label">Total Activos</div>
+                            <div className="stat-value">${totalActivos.toFixed(2)}</div>
+                        </div>
+                        <div className="stat-card danger">
+                            <div className="stat-label">Total Pasivos</div>
+                            <div className="stat-value">${totalPasivos.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    {currentEntity === 'panaderia' && (
+                        <>
+                            <div className="card">
+                                <div className="card-title">⚡ Acciones Rápidas</div>
+                                <div className="quick-action" onClick={() => { setCurrentTab('sales'); setShowModal('sale'); }}>
+                                    <div className="quick-icon">💵</div>
+                                    <div>
+                                        <div style={{ fontSize: '16px' }}>Registrar Venta</div>
+                                        <div style={{ fontSize: '13px', opacity: 0.8 }}>Crear nueva venta</div>
+                                    </div>
+                                </div>
+                                <div className="quick-action" onClick={() => setCurrentTab('inventory')} style={{ background: 'var(--accent)' }}>
+                                    <div className="quick-icon">📦</div>
+                                    <div>
+                                        <div style={{ fontSize: '16px' }}>Ver Inventario</div>
+                                        <div style={{ fontSize: '13px', opacity: 0.8 }}>{inventory.length} productos</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="card">
+                                <div className="card-title">📊 Ventas de Hoy</div>
+                                <div className="stats-grid">
+                                    <div className="stat-card success">
+                                        <div className="stat-label">Ingresos</div>
+                                        <div className="stat-value">${todayRevenue.toFixed(2)}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-label">Ventas</div>
+                                        <div className="stat-value">{todaySales.length}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {lowStockItems.length > 0 && (
+                                <div className="card">
+                                    <div className="card-title">⚠️ Stock Bajo</div>
+                                    <div className="info-box warning">
+                                        <strong>{lowStockItems.length} producto(s)</strong> con stock bajo o agotado
+                                    </div>
+                                    {lowStockItems.slice(0, 3).map(item => (
+                                        <div key={item.id} className="item-card low-stock">
+                                            <div className="item-header">
+                                                <div className="item-title">{item.name}</div>
+                                                <span className="item-badge badge-danger">
+                                                    Stock: {item.stock}
+                                                </span>
+                                            </div>
+                                            <div className="item-detail">
+                                                Mínimo requerido: {item.minStock}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {lowStockItems.length > 3 && (
+                                        <button className="btn btn-secondary btn-small" onClick={() => setCurrentTab('inventory')}>
+                                            Ver todos ({lowStockItems.length})
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {totalCustomerBalance > 0 && (
+                                <div className="card">
+                                    <div className="card-title">💰 Cuentas por Cobrar</div>
+                                    <div className="info-box">
+                                        Total por cobrar: <strong>${totalCustomerBalance.toFixed(2)}</strong>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    
+                    <div className="card">
+                        <div className="card-title">📝 Últimas Transacciones</div>
+                        {transactions.slice(0, 5).map(trans => (
+                            <div key={trans.id} className="item-card">
+                                <div className="item-header">
+                                    <span style={{ fontSize: '12px', color: 'var(--gray-600)' }}>{trans.date}</span>
+                                </div>
+                                <div className="item-title" style={{ fontSize: '14px' }}>{trans.description}</div>
+                                {trans.entries.map((entry, idx) => (
+                                    <div key={idx} className="item-detail">
+                                        {entry.type === 'debito' ? '📗 D' : '📘 C'} {accounts[entry.account]?.name}: ${entry.amount.toFixed(2)}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                        
+                        {transactions.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📝</div>
+                                <p>No hay transacciones</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        
+        function Sales({ sales, inventory, customers, addSale, showModal, setShowModal }) {
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(s => s.date === today);
+            const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
+            
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('sale')}
+                    >
+                        ➕ Nueva Venta
+                    </button>
+                    
+                    <div className="stats-grid">
+                        <div className="stat-card success">
+                            <div className="stat-label">Hoy</div>
+                            <div className="stat-value">${todayRevenue.toFixed(2)}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Ventas Hoy</div>
+                            <div className="stat-value">{todaySales.length}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="card">
+                        <div className="card-title">📊 Historial de Ventas</div>
+                        {sales.map(sale => (
+                            <div key={sale.id} className="item-card">
+                                <div className="item-header">
+                                    <div>
+                                        <div className="item-title">Venta #{sale.id}</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
+                                            {sale.date} • {sale.customerName || 'Cliente'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--success)' }}>
+                                            ${sale.total.toFixed(2)}
+                                        </div>
+                                        <span className={`item-badge ${
+                                            sale.paymentType === 'efectivo' ? 'badge-success' :
+                                            sale.paymentType === 'banco' ? 'badge-warning' :
+                                            'badge-danger'
+                                        }`}>
+                                            {sale.paymentType}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="item-detail">
+                                    {sale.items.length} producto(s)
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {sales.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">💵</div>
+                                <p>No hay ventas registradas</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'sale' && (
+                        <SaleModal 
+                            inventory={inventory}
+                            customers={customers}
+                            onClose={() => setShowModal(null)}
+                            onSave={addSale}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function SaleModal({ inventory, customers, onClose, onSave }) {
+            const [customerName, setCustomerName] = useState('');
+            const [customerId, setCustomerId] = useState('');
+            const [paymentType, setPaymentType] = useState('efectivo');
+            const [items, setItems] = useState([{ productId: '', quantity: 1, price: 0 }]);
+            
+            const addItem = () => {
+                setItems([...items, { productId: '', quantity: 1, price: 0 }]);
+            };
+            
+            const removeItem = (index) => {
+                if (items.length > 1) {
+                    setItems(items.filter((_, i) => i !== index));
+                }
+            };
+            
+            const updateItem = (index, field, value) => {
+                const updated = [...items];
+                updated[index][field] = value;
+                
+                if (field === 'productId') {
+                    const product = inventory.find(p => p.id === parseInt(value));
+                    if (product) {
+                        updated[index].price = product.price;
+                    }
+                }
+                
+                setItems(updated);
+            };
+            
+            const total = items.reduce((sum, item) => {
+                return sum + (item.price * item.quantity);
+            }, 0);
+            
+            const handleSave = () => {
+                if (items.some(item => !item.productId || item.quantity <= 0)) {
+                    alert('Por favor completa todos los productos');
+                    return;
+                }
+                
+                if (paymentType === 'credito' && !customerId) {
+                    alert('Selecciona un cliente para ventas a crédito');
+                    return;
+                }
+                
+                const sale = {
+                    customerName: customerName || 'Cliente',
+                    customerId: customerId ? parseInt(customerId) : null,
+                    paymentType,
+                    items: items.map(item => ({
+                        productId: parseInt(item.productId),
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
+                    total
+                };
+                
+                onSave(sale);
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nueva Venta</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Cliente</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={customerName}
+                                onChange={e => setCustomerName(e.target.value)}
+                                placeholder="Nombre del cliente"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Tipo de Pago</label>
+                            <select 
+                                className="form-select"
+                                value={paymentType}
+                                onChange={e => setPaymentType(e.target.value)}
+                            >
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="banco">🏦 Banco/Tarjeta</option>
+                                <option value="credito">📝 Crédito</option>
+                            </select>
+                        </div>
+                        
+                        {paymentType === 'credito' && (
+                            <div className="form-group">
+                                <label className="form-label">Cliente (Crédito)</label>
+                                <select 
+                                    className="form-select"
+                                    value={customerId}
+                                    onChange={e => setCustomerId(e.target.value)}
+                                >
+                                    <option value="">Seleccionar cliente</option>
+                                    {customers.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        
+                        <div className="form-group">
+                            <label className="form-label">Productos</label>
+                            {items.map((item, index) => (
+                                <div key={index} className="sale-form-item">
+                                    <select 
+                                        className="form-select"
+                                        value={item.productId}
+                                        onChange={e => updateItem(index, 'productId', e.target.value)}
+                                        style={{ flex: 2 }}
+                                    >
+                                        <option value="">Producto</option>
+                                        {inventory.filter(p => p.stock > 0).map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} (Stock: {p.stock})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    
+                                    <input 
+                                        type="number"
+                                        className="form-input"
+                                        value={item.quantity}
+                                        onChange={e => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                                        placeholder="Cant."
+                                        min="1"
+                                        style={{ flex: 1 }}
+                                    />
+                                    
+                                    <input 
+                                        type="number"
+                                        className="form-input"
+                                        value={item.price}
+                                        onChange={e => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
+                                        placeholder="Precio"
+                                        step="0.01"
+                                        style={{ flex: 1 }}
+                                    />
+                                    
+                                    {items.length > 1 && (
+                                        <button 
+                                            className="btn btn-danger btn-icon"
+                                            onClick={() => removeItem(index)}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            
+                            <button 
+                                className="btn btn-secondary btn-small"
+                                onClick={addItem}
+                            >
+                                + Agregar producto
+                            </button>
+                        </div>
+                        
+                        <div className="info-box success">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong style={{ fontSize: '16px' }}>Total:</strong>
+                                <strong style={{ fontSize: '22px' }}>${total.toFixed(2)}</strong>
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-success" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar Venta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Inventory({ inventory, addInventoryItem, updateInventoryStock, showModal, setShowModal }) {
+            const lowStockItems = inventory.filter(item => item.stock <= item.minStock);
+            const totalValue = inventory.reduce((sum, item) => sum + (item.cost * item.stock), 0);
+            
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('inventory')}
+                    >
+                        ➕ Nuevo Producto
+                    </button>
+                    
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Productos</div>
+                            <div className="stat-value">{inventory.length}</div>
+                        </div>
+                        <div className="stat-card accent">
+                            <div className="stat-label">Valor Total</div>
+                            <div className="stat-value">${totalValue.toFixed(2)}</div>
+                        </div>
+                        <div className="stat-card danger">
+                            <div className="stat-label">Stock Bajo</div>
+                            <div className="stat-value">{lowStockItems.length}</div>
+                        </div>
+                        <div className="stat-card success">
+                            <div className="stat-label">Stock OK</div>
+                            <div className="stat-value">{inventory.length - lowStockItems.length}</div>
+                        </div>
+                    </div>
+                    
+                    {lowStockItems.length > 0 && (
+                        <div className="info-box warning">
+                            ⚠️ <strong>{lowStockItems.length} producto(s)</strong> con stock bajo
+                        </div>
+                    )}
+                    
+                    <div className="card">
+                        <div className="card-title">📦 Productos</div>
+                        {inventory.map(item => (
+                            <div key={item.id} className={`item-card ${item.stock <= item.minStock ? 'low-stock' : ''}`}>
+                                <div className="item-header">
+                                    <div className="item-title">{item.name}</div>
+                                    <span className={`item-badge ${
+                                        item.stock === 0 ? 'badge-danger' :
+                                        item.stock <= item.minStock ? 'badge-warning' :
+                                        'badge-success'
+                                    }`}>
+                                        Stock: {item.stock}
+                                    </span>
+                                </div>
+                                <div className="item-detail">
+                                    Precio: ${item.price.toFixed(2)} | Costo: ${item.cost.toFixed(2)}
+                                </div>
+                                <div className="item-detail">
+                                    Mínimo: {item.minStock} | Categoría: {item.category}
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {inventory.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📦</div>
+                                <p>No hay productos</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'inventory' && (
+                        <InventoryModal 
+                            onClose={() => setShowModal(null)}
+                            onSave={addInventoryItem}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function InventoryModal({ onClose, onSave }) {
+            const [name, setName] = useState('');
+            const [category, setCategory] = useState('Pan');
+            const [price, setPrice] = useState('');
+            const [cost, setCost] = useState('');
+            const [stock, setStock] = useState('');
+            const [minStock, setMinStock] = useState('');
+            
+            const handleSave = () => {
+                if (!name || !price || !cost || !stock || !minStock) {
+                    alert('Por favor completa todos los campos');
+                    return;
+                }
+                
+                onSave({
+                    name,
+                    category,
+                    price: parseFloat(price),
+                    cost: parseFloat(cost),
+                    stock: parseInt(stock),
+                    minStock: parseInt(minStock)
+                });
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nuevo Producto</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Nombre</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Ej: Pan Blanco"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Categoría</label>
+                            <select 
+                                className="form-select"
+                                value={category}
+                                onChange={e => setCategory(e.target.value)}
+                            >
+                                <option value="Pan">Pan</option>
+                                <option value="Pastel">Pastel</option>
+                                <option value="Galletas">Galletas</option>
+                                <option value="Insumos">Insumos</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label className="form-label">Precio Venta</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={price}
+                                    onChange={e => setPrice(e.target.value)}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Costo</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={cost}
+                                    onChange={e => setCost(e.target.value)}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label className="form-label">Stock Inicial</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={stock}
+                                    onChange={e => setStock(e.target.value)}
+                                    placeholder="0"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Stock Mínimo</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={minStock}
+                                    onChange={e => setMinStock(e.target.value)}
+                                    placeholder="0"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Customers({ customers, addCustomer, showModal, setShowModal }) {
+            const totalBalance = customers.reduce((sum, c) => sum + c.balance, 0);
+            const customersWithDebt = customers.filter(c => c.balance > 0);
+            
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('customer')}
+                    >
+                        ➕ Nuevo Cliente
+                    </button>
+                    
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Total Clientes</div>
+                            <div className="stat-value">{customers.length}</div>
+                        </div>
+                        <div className="stat-card accent">
+                            <div className="stat-label">Por Cobrar</div>
+                            <div className="stat-value">${totalBalance.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="card">
+                        <div className="card-title">👥 Clientes</div>
+                        {customers.map(customer => (
+                            <div key={customer.id} className="item-card">
+                                <div className="item-header">
+                                    <div className="item-title">{customer.name}</div>
+                                    {customer.balance > 0 && (
+                                        <span className="item-badge badge-warning">
+                                            Debe: ${customer.balance.toFixed(2)}
+                                        </span>
+                                    )}
+                                </div>
+                                {customer.phone && (
+                                    <div className="item-detail">📱 {customer.phone}</div>
+                                )}
+                                {customer.email && (
+                                    <div className="item-detail">📧 {customer.email}</div>
+                                )}
+                            </div>
+                        ))}
+                        
+                        {customers.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">👥</div>
+                                <p>No hay clientes</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'customer' && (
+                        <CustomerModal 
+                            onClose={() => setShowModal(null)}
+                            onSave={addCustomer}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function CustomerModal({ onClose, onSave }) {
+            const [name, setName] = useState('');
+            const [phone, setPhone] = useState('');
+            const [email, setEmail] = useState('');
+            const [address, setAddress] = useState('');
+            
+            const handleSave = () => {
+                if (!name) {
+                    alert('El nombre es obligatorio');
+                    return;
+                }
+                
+                onSave({ name, phone, email, address });
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nuevo Cliente</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Nombre *</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Nombre del cliente"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Teléfono</label>
+                            <input 
+                                type="tel"
+                                className="form-input"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="Ej: 123-456-7890"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input 
+                                type="email"
+                                className="form-input"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="cliente@email.com"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Dirección</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={address}
+                                onChange={e => setAddress(e.target.value)}
+                                placeholder="Dirección completa"
+                            />
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Suppliers({ suppliers, addSupplier, showModal, setShowModal }) {
+            const totalBalance = suppliers.reduce((sum, s) => sum + s.balance, 0);
+            
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('supplier')}
+                    >
+                        ➕ Nuevo Proveedor
+                    </button>
+                    
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Proveedores</div>
+                            <div className="stat-value">{suppliers.length}</div>
+                        </div>
+                        <div className="stat-card danger">
+                            <div className="stat-label">Por Pagar</div>
+                            <div className="stat-value">${totalBalance.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="card">
+                        <div className="card-title">🏭 Proveedores</div>
+                        {suppliers.map(supplier => (
+                            <div key={supplier.id} className="item-card">
+                                <div className="item-header">
+                                    <div className="item-title">{supplier.name}</div>
+                                    {supplier.balance > 0 && (
+                                        <span className="item-badge badge-danger">
+                                            Debo: ${supplier.balance.toFixed(2)}
+                                        </span>
+                                    )}
+                                </div>
+                                {supplier.phone && (
+                                    <div className="item-detail">📱 {supplier.phone}</div>
+                                )}
+                                {supplier.email && (
+                                    <div className="item-detail">📧 {supplier.email}</div>
+                                )}
+                                {supplier.products && (
+                                    <div className="item-detail">📦 {supplier.products}</div>
+                                )}
+                            </div>
+                        ))}
+                        
+                        {suppliers.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">🏭</div>
+                                <p>No hay proveedores</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'supplier' && (
+                        <SupplierModal 
+                            onClose={() => setShowModal(null)}
+                            onSave={addSupplier}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function SupplierModal({ onClose, onSave }) {
+            const [name, setName] = useState('');
+            const [phone, setPhone] = useState('');
+            const [email, setEmail] = useState('');
+            const [products, setProducts] = useState('');
+            
+            const handleSave = () => {
+                if (!name) {
+                    alert('El nombre es obligatorio');
+                    return;
+                }
+                
+                onSave({ name, phone, email, products });
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nuevo Proveedor</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Nombre *</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Nombre del proveedor"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Teléfono</label>
+                            <input 
+                                type="tel"
+                                className="form-input"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="Ej: 123-456-7890"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input 
+                                type="email"
+                                className="form-input"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="proveedor@email.com"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Productos que suministra</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={products}
+                                onChange={e => setProducts(e.target.value)}
+                                placeholder="Ej: Harina, Azúcar, Huevos"
+                            />
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Componentes de Transactions, Loans, Reports y Backup igual que antes...
+        // (Por brevedad no los repito, son los mismos)
+        
+        function Transactions({ accounts, transactions, addTransaction, showModal, setShowModal }) {
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('transaction')}
+                    >
+                        ➕ Nueva Transacción
+                    </button>
+                    
+                    <div className="card">
+                        <div className="card-title">📝 Historial</div>
+                        {transactions.map(trans => (
+                            <div key={trans.id} className="item-card">
+                                <div className="item-header">
+                                    <span style={{ fontSize: '12px', color: 'var(--gray-600)' }}>{trans.date}</span>
+                                </div>
+                                <div className="item-title" style={{ fontSize: '14px' }}>{trans.description}</div>
+                                {trans.entries.map((entry, idx) => (
+                                    <div key={idx} className="item-detail">
+                                        {entry.type === 'debito' ? '📗 Débito' : '📘 Crédito'} - {accounts[entry.account]?.name}: ${entry.amount.toFixed(2)}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                        
+                        {transactions.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📝</div>
+                                <p>No hay transacciones</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'transaction' && (
+                        <TransactionModal 
+                            accounts={accounts}
+                            onClose={() => setShowModal(null)}
+                            onSave={addTransaction}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function TransactionModal({ accounts, onClose, onSave }) {
+            const [description, setDescription] = useState('');
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [entries, setEntries] = useState([
+                { account: '', type: 'debito', amount: 0 },
+                { account: '', type: 'credito', amount: 0 }
+            ]);
+            
+            const addEntry = () => {
+                setEntries([...entries, { account: '', type: 'debito', amount: 0 }]);
+            };
+            
+            const removeEntry = (index) => {
+                if (entries.length > 2) {
+                    setEntries(entries.filter((_, i) => i !== index));
+                }
+            };
+            
+            const updateEntry = (index, field, value) => {
+                const updated = [...entries];
+                updated[index][field] = field === 'amount' ? parseFloat(value) || 0 : value;
+                setEntries(updated);
+            };
+            
+            const handleSave = () => {
+                const totalDebito = entries.filter(e => e.type === 'debito').reduce((sum, e) => sum + e.amount, 0);
+                const totalCredito = entries.filter(e => e.type === 'credito').reduce((sum, e) => sum + e.amount, 0);
+                
+                if (Math.abs(totalDebito - totalCredito) > 0.01) {
+                    alert('Los débitos deben ser iguales a los créditos');
+                    return;
+                }
+                
+                if (!description || entries.some(e => !e.account || e.amount <= 0)) {
+                    alert('Por favor completa todos los campos');
+                    return;
+                }
+                
+                onSave({ description, date, entries });
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nueva Transacción</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Descripción</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Ej: Pago de renta"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Fecha</label>
+                            <input 
+                                type="date"
+                                className="form-input"
+                                value={date}
+                                onChange={e => setDate(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Asientos Contables</label>
+                            {entries.map((entry, index) => (
+                                <div key={index} className="entry-line">
+                                    <select 
+                                        className="form-select"
+                                        value={entry.type}
+                                        onChange={e => updateEntry(index, 'type', e.target.value)}
+                                    >
+                                        <option value="debito">Débito</option>
+                                        <option value="credito">Crédito</option>
+                                    </select>
+                                    
+                                    <select 
+                                        className="form-select"
+                                        value={entry.account}
+                                        onChange={e => updateEntry(index, 'account', e.target.value)}
+                                    >
+                                        <option value="">Cuenta</option>
+                                        {Object.values(accounts).map(acc => (
+                                            <option key={acc.code} value={acc.code}>
+                                                {acc.code} - {acc.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    
+                                    <input 
+                                        type="number"
+                                        className="form-input"
+                                        value={entry.amount}
+                                        onChange={e => updateEntry(index, 'amount', e.target.value)}
+                                        placeholder="0.00"
+                                        step="0.01"
+                                    />
+                                    
+                                    {entries.length > 2 && (
+                                        <button 
+                                            className="btn btn-danger btn-icon"
+                                            onClick={() => removeEntry(index)}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            
+                            <button 
+                                className="btn btn-secondary btn-small"
+                                style={{ marginTop: '8px' }}
+                                onClick={addEntry}
+                            >
+                                + Agregar línea
+                            </button>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Loans({ loans, addLoan, makePayment, showModal, setShowModal }) {
+            return (
+                <div>
+                    <button 
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginBottom: '16px' }}
+                        onClick={() => setShowModal('loan')}
+                    >
+                        ➕ Nuevo Préstamo
+                    </button>
+                    
+                    <div className="card">
+                        <div className="card-title">💳 Préstamos</div>
+                        {loans.map(loan => (
+                            <div key={loan.id} style={{ marginBottom: '16px' }}>
+                                <div className="item-card">
+                                    <div className="item-header">
+                                        <div>
+                                            <div className="item-title">{loan.description}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
+                                                {loan.type === 'recibido' ? '📥 Recibido' : '📤 Otorgado'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)' }}>
+                                                ${loan.balance.toFixed(2)}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>Saldo</div>
+                                        </div>
+                                    </div>
+                                    <div className="item-detail">
+                                        Original: ${loan.amount.toFixed(2)} | {loan.interestRate}%
+                                    </div>
+                                    <div className="item-detail">
+                                        {loan.startDate} | Pagos: {loan.payments.length}
+                                    </div>
+                                    
+                                    {loan.balance > 0 && (
+                                        <button 
+                                            className="btn btn-primary btn-small"
+                                            style={{ marginTop: '10px' }}
+                                            onClick={() => setShowModal(`payment-${loan.id}`)}
+                                        >
+                                            💰 Pago
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {showModal === `payment-${loan.id}` && (
+                                    <PaymentModal 
+                                        loan={loan}
+                                        onClose={() => setShowModal(null)}
+                                        onSave={(payment) => {
+                                            makePayment(loan.id, payment);
+                                            setShowModal(null);
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                        
+                        {loans.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">💳</div>
+                                <p>No hay préstamos</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {showModal === 'loan' && (
+                        <LoanModal 
+                            onClose={() => setShowModal(null)}
+                            onSave={addLoan}
+                        />
+                    )}
+                </div>
+            );
+        }
+        
+        function LoanModal({ onClose, onSave }) {
+            const [description, setDescription] = useState('');
+            const [type, setType] = useState('recibido');
+            const [amount, setAmount] = useState('');
+            const [interestRate, setInterestRate] = useState('');
+            const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+            
+            const handleSave = () => {
+                if (!description || !amount || !interestRate) {
+                    alert('Por favor completa todos los campos');
+                    return;
+                }
+                
+                onSave({
+                    description,
+                    type,
+                    amount: parseFloat(amount),
+                    interestRate: parseFloat(interestRate),
+                    startDate
+                });
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Nuevo Préstamo</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Descripción</label>
+                            <input 
+                                type="text"
+                                className="form-input"
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Ej: Préstamo bancario"
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Tipo</label>
+                            <select 
+                                className="form-select"
+                                value={type}
+                                onChange={e => setType(e.target.value)}
+                            >
+                                <option value="recibido">📥 Recibido</option>
+                                <option value="otorgado">📤 Otorgado</option>
+                            </select>
+                        </div>
+                        
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label className="form-label">Monto</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={amount}
+                                    onChange={e => setAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Tasa % Anual</label>
+                                <input 
+                                    type="number"
+                                    className="form-input"
+                                    value={interestRate}
+                                    onChange={e => setInterestRate(e.target.value)}
+                                    placeholder="5.00"
+                                    step="0.01"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Fecha</label>
+                            <input 
+                                type="date"
+                                className="form-input"
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function PaymentModal({ loan, onClose, onSave }) {
+            const monthlyInterest = (loan.balance * loan.interestRate / 100 / 12);
+            const [amount, setAmount] = useState(monthlyInterest.toFixed(2));
+            
+            const principal = parseFloat(amount) - monthlyInterest;
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Registrar Pago</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="info-box">
+                            <p><strong>Préstamo:</strong> {loan.description}</p>
+                            <p><strong>Saldo:</strong> ${loan.balance.toFixed(2)}</p>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Monto del Pago</label>
+                            <input 
+                                type="number"
+                                className="form-input"
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                step="0.01"
+                            />
+                            <div style={{ fontSize: '13px', color: 'var(--gray-600)', marginTop: '8px' }}>
+                                Interés mensual: ${monthlyInterest.toFixed(2)}
+                            </div>
+                        </div>
+                        
+                        {parseFloat(amount) > 0 && (
+                            <div className="info-box success">
+                                <p style={{ marginBottom: '6px' }}><strong>Distribución:</strong></p>
+                                <p style={{ fontSize: '13px' }}>Interés: ${monthlyInterest.toFixed(2)}</p>
+                                <p style={{ fontSize: '13px' }}>Capital: ${principal.toFixed(2)}</p>
+                                <p style={{ fontSize: '14px', marginTop: '8px' }}>
+                                    <strong>Nuevo saldo: ${Math.max(0, loan.balance - principal).toFixed(2)}</strong>
+                                </p>
+                            </div>
+                        )}
+                        
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button 
+                                className="btn btn-primary" 
+                                style={{ flex: 1 }} 
+                                onClick={() => onSave(parseFloat(amount))}
+                                disabled={!amount || parseFloat(amount) <= 0}
+                            >
+                                Pagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function Reports({ accounts, getBalanceSheet, getIncomeStatement, currentEntity }) {
+            const { activos, pasivos, capital } = getBalanceSheet();
+            const { ingresos, gastos } = getIncomeStatement();
+            
+            const totalActivos = Object.values(activos).reduce((sum, acc) => {
+                if (acc.type === 'activo_contra') return sum - acc.balance;
+                return sum + acc.balance;
+            }, 0);
+            
+            const totalPasivos = Object.values(pasivos).reduce((sum, acc) => sum + acc.balance, 0);
+            const totalCapital = Object.values(capital).reduce((sum, acc) => sum + acc.balance, 0);
+            const totalIngresos = Object.values(ingresos).reduce((sum, acc) => sum + acc.balance, 0);
+            const totalGastos = Object.values(gastos).reduce((sum, acc) => sum + acc.balance, 0);
+            const utilidadNeta = totalIngresos - totalGastos;
+            
+            const generatePDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const entityName = currentEntity === 'personal' ? 'Finanzas Personales' : 'Negocio';
+                const today = new Date().toLocaleDateString('es');
+                
+                doc.setFontSize(18);
+                doc.text('Balance General', 105, 20, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text(entityName, 105, 28, { align: 'center' });
+                doc.text(`Fecha: ${today}`, 105, 35, { align: 'center' });
+                
+                let y = 50;
+                
+                doc.setFontSize(14);
+                doc.text('ACTIVOS', 20, y);
+                y += 8;
+                doc.setFontSize(10);
+                
+                Object.values(activos).forEach(acc => {
+                    const value = acc.type === 'activo_contra' ? 
+                        `($${acc.balance.toFixed(2)})` : 
+                        `$${acc.balance.toFixed(2)}`;
+                    doc.text(`  ${acc.name}`, 20, y);
+                    doc.text(value, 190, y, { align: 'right' });
+                    y += 6;
+                });
+                
+                doc.setFontSize(12);
+                doc.text('Total Activos', 20, y);
+                doc.text(`$${totalActivos.toFixed(2)}`, 190, y, { align: 'right' });
+                y += 12;
+                
+                doc.setFontSize(14);
+                doc.text('PASIVOS', 20, y);
+                y += 8;
+                doc.setFontSize(10);
+                
+                Object.values(pasivos).forEach(acc => {
+                    doc.text(`  ${acc.name}`, 20, y);
+                    doc.text(`$${acc.balance.toFixed(2)}`, 190, y, { align: 'right' });
+                    y += 6;
+                });
+                
+                doc.setFontSize(12);
+                doc.text('Total Pasivos', 20, y);
+                doc.text(`$${totalPasivos.toFixed(2)}`, 190, y, { align: 'right' });
+                y += 12;
+                
+                doc.setFontSize(14);
+                doc.text('CAPITAL', 20, y);
+                y += 8;
+                doc.setFontSize(10);
+                
+                Object.values(capital).forEach(acc => {
+                    doc.text(`  ${acc.name}`, 20, y);
+                    doc.text(`$${acc.balance.toFixed(2)}`, 190, y, { align: 'right' });
+                    y += 6;
+                });
+                
+                doc.text('  Utilidad del Periodo', 20, y);
+                doc.text(`$${utilidadNeta.toFixed(2)}`, 190, y, { align: 'right' });
+                y += 6;
+                
+                doc.setFontSize(12);
+                doc.text('Total Capital', 20, y);
+                doc.text(`$${(totalCapital + utilidadNeta).toFixed(2)}`, 190, y, { align: 'right' });
+                
+                doc.addPage();
+                y = 20;
+                
+                doc.setFontSize(18);
+                doc.text('Estado de Resultados', 105, y, { align: 'center' });
+                y += 8;
+                doc.setFontSize(12);
+                doc.text(entityName, 105, y, { align: 'center' });
+                y += 8;
+                doc.text(`Fecha: ${today}`, 105, y, { align: 'center' });
+                y += 15;
+                
+                doc.setFontSize(14);
+                doc.text('INGRESOS', 20, y);
+                y += 8;
+                doc.setFontSize(10);
+                
+                Object.values(ingresos).forEach(acc => {
+                    doc.text(`  ${acc.name}`, 20, y);
+                    doc.text(`$${acc.balance.toFixed(2)}`, 190, y, { align: 'right' });
+                    y += 6;
+                });
+                
+                doc.setFontSize(12);
+                doc.text('Total Ingresos', 20, y);
+                doc.text(`$${totalIngresos.toFixed(2)}`, 190, y, { align: 'right' });
+                y += 12;
+                
+                doc.setFontSize(14);
+                doc.text('GASTOS', 20, y);
+                y += 8;
+                doc.setFontSize(10);
+                
+                Object.values(gastos).forEach(acc => {
+                    doc.text(`  ${acc.name}`, 20, y);
+                    doc.text(`$${acc.balance.toFixed(2)}`, 190, y, { align: 'right' });
+                    y += 6;
+                });
+                
+                doc.setFontSize(12);
+                doc.text('Total Gastos', 20, y);
+                doc.text(`$${totalGastos.toFixed(2)}`, 190, y, { align: 'right' });
+                y += 12;
+                
+                doc.setFontSize(14);
+                doc.text(utilidadNeta >= 0 ? 'Utilidad Neta' : 'Pérdida Neta', 20, y);
+                doc.text(`$${Math.abs(utilidadNeta).toFixed(2)}`, 190, y, { align: 'right' });
+                
+                doc.save(`reportes_${currentEntity}_${new Date().toISOString().split('T')[0]}.pdf`);
+            };
+            
+            const generateExcel = () => {
+                const wb = window.XLSX.utils.book_new();
+                
+                const balanceData = [
+                    ['BALANCE GENERAL'],
+                    [currentEntity === 'personal' ? 'Finanzas Personales' : 'Negocio'],
+                    [`Fecha: ${new Date().toLocaleDateString('es')}`],
+                    [],
+                    ['ACTIVOS', ''],
+                    ...Object.values(activos).map(acc => [
+                        `  ${acc.name}`,
+                        acc.type === 'activo_contra' ? -acc.balance : acc.balance
+                    ]),
+                    ['Total Activos', { f: `SUM(B6:B${5 + Object.keys(activos).length})` }],
+                    [],
+                    ['PASIVOS', ''],
+                    ...Object.values(pasivos).map(acc => [
+                        `  ${acc.name}`,
+                        acc.balance
+                    ]),
+                    ['Total Pasivos', { f: `SUM(B${8 + Object.keys(activos).length}:B${7 + Object.keys(activos).length + Object.keys(pasivos).length})` }],
+                    [],
+                    ['CAPITAL', ''],
+                    ...Object.values(capital).map(acc => [
+                        `  ${acc.name}`,
+                        acc.balance
+                    ]),
+                    ['  Utilidad del Periodo', utilidadNeta],
+                    ['Total Capital', { f: `SUM(B${10 + Object.keys(activos).length + Object.keys(pasivos).length}:B${9 + Object.keys(activos).length + Object.keys(pasivos).length + Object.keys(capital).length + 1})` }],
+                    [],
+                    ['Total Pasivo + Capital', { f: `B${7 + Object.keys(activos).length}+B${9 + Object.keys(activos).length + Object.keys(pasivos).length + Object.keys(capital).length + 1}` }]
+                ];
+                
+                const balanceWS = window.XLSX.utils.aoa_to_sheet(balanceData);
+                
+                const range = window.XLSX.utils.decode_range(balanceWS['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    const cell_address = { c: 1, r: R };
+                    const cell_ref = window.XLSX.utils.encode_cell(cell_address);
+                    if (balanceWS[cell_ref] && typeof balanceWS[cell_ref].v === 'number') {
+                        balanceWS[cell_ref].z = '$#,##0.00';
+                    }
+                }
+                
+                window.XLSX.utils.book_append_sheet(wb, balanceWS, 'Balance General');
+                
+                const resultadosData = [
+                    ['ESTADO DE RESULTADOS'],
+                    [currentEntity === 'personal' ? 'Finanzas Personales' : 'Negocio'],
+                    [`Fecha: ${new Date().toLocaleDateString('es')}`],
+                    [],
+                    ['INGRESOS', ''],
+                    ...Object.values(ingresos).map(acc => [
+                        `  ${acc.name}`,
+                        acc.balance
+                    ]),
+                    ['Total Ingresos', { f: `SUM(B6:B${5 + Object.keys(ingresos).length})` }],
+                    [],
+                    ['GASTOS', ''],
+                    ...Object.values(gastos).map(acc => [
+                        `  ${acc.name}`,
+                        acc.balance
+                    ]),
+                    ['Total Gastos', { f: `SUM(B${8 + Object.keys(ingresos).length}:B${7 + Object.keys(ingresos).length + Object.keys(gastos).length})` }],
+                    [],
+                    [utilidadNeta >= 0 ? 'Utilidad Neta' : 'Pérdida Neta', { f: `B${6 + Object.keys(ingresos).length}-B${8 + Object.keys(ingresos).length + Object.keys(gastos).length}` }]
+                ];
+                
+                const resultadosWS = window.XLSX.utils.aoa_to_sheet(resultadosData);
+                
+                const range2 = window.XLSX.utils.decode_range(resultadosWS['!ref']);
+                for (let R = range2.s.r; R <= range2.e.r; ++R) {
+                    const cell_address = { c: 1, r: R };
+                    const cell_ref = window.XLSX.utils.encode_cell(cell_address);
+                    if (resultadosWS[cell_ref] && typeof resultadosWS[cell_ref].v === 'number') {
+                        resultadosWS[cell_ref].z = '$#,##0.00';
+                    }
+                }
+                
+                window.XLSX.utils.book_append_sheet(wb, resultadosWS, 'Estado de Resultados');
+                
+                window.XLSX.writeFile(wb, `reportes_${currentEntity}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            };
+            
+            return (
+                <div>
+                    <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+                        <button className="btn btn-primary" onClick={generatePDF}>
+                            📄 Descargar PDF
+                        </button>
+                        <button className="btn btn-accent" onClick={generateExcel}>
+                            📊 Descargar Excel
+                        </button>
+                    </div>
+                    
+                    <div className="card">
+                        <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', paddingBottom: '10px', borderBottom: '3px solid var(--primary)' }}>
+                            Balance General
+                        </div>
+                        <p style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: '16px' }}>
+                            {currentEntity === 'personal' ? 'Finanzas Personales' : 'Negocio'}
+                        </p>
+                        
+                        <div className="table-responsive">
+                            <table className="data-table">
+                                <tbody>
+                                    <tr>
+                                        <td colSpan="2"><strong>ACTIVOS</strong></td>
+                                    </tr>
+                                    {Object.values(activos).map(acc => (
+                                        <tr key={acc.code}>
+                                            <td style={{ paddingLeft: '20px' }}>{acc.name}</td>
+                                            <td className="text-right">
+                                                ${acc.type === 'activo_contra' ? 
+                                                    `(${acc.balance.toFixed(2)})` : 
+                                                    acc.balance.toFixed(2)
+                                                }
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ fontWeight: '700', borderTop: '2px solid var(--gray-300)' }}>
+                                        <td>Total Activos</td>
+                                        <td className="text-right">${totalActivos.toFixed(2)}</td>
+                                    </tr>
+                                    
+                                    <tr><td colSpan="2" style={{ height: '16px' }}></td></tr>
+                                    
+                                    <tr>
+                                        <td colSpan="2"><strong>PASIVOS</strong></td>
+                                    </tr>
+                                    {Object.values(pasivos).map(acc => (
+                                        <tr key={acc.code}>
+                                            <td style={{ paddingLeft: '20px' }}>{acc.name}</td>
+                                            <td className="text-right">${acc.balance.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ fontWeight: '700', borderTop: '2px solid var(--gray-300)' }}>
+                                        <td>Total Pasivos</td>
+                                        <td className="text-right">${totalPasivos.toFixed(2)}</td>
+                                    </tr>
+                                    
+                                    <tr><td colSpan="2" style={{ height: '16px' }}></td></tr>
+                                    
+                                    <tr>
+                                        <td colSpan="2"><strong>CAPITAL</strong></td>
+                                    </tr>
+                                    {Object.values(capital).map(acc => (
+                                        <tr key={acc.code}>
+                                            <td style={{ paddingLeft: '20px' }}>{acc.name}</td>
+                                            <td className="text-right">${acc.balance.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr>
+                                        <td style={{ paddingLeft: '20px' }}>Utilidad del Periodo</td>
+                                        <td className="text-right">${utilidadNeta.toFixed(2)}</td>
+                                    </tr>
+                                    <tr style={{ fontWeight: '700', borderTop: '2px solid var(--gray-300)' }}>
+                                        <td>Total Capital</td>
+                                        <td className="text-right">${(totalCapital + utilidadNeta).toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div className="card">
+                        <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', paddingBottom: '10px', borderBottom: '3px solid var(--primary)' }}>
+                            Estado de Resultados
+                        </div>
+                        
+                        <div className="table-responsive">
+                            <table className="data-table">
+                                <tbody>
+                                    <tr>
+                                        <td colSpan="2"><strong>INGRESOS</strong></td>
+                                    </tr>
+                                    {Object.values(ingresos).map(acc => (
+                                        <tr key={acc.code}>
+                                            <td style={{ paddingLeft: '20px' }}>{acc.name}</td>
+                                            <td className="text-right">${acc.balance.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ fontWeight: '700', borderTop: '2px solid var(--gray-300)' }}>
+                                        <td>Total Ingresos</td>
+                                        <td className="text-right">${totalIngresos.toFixed(2)}</td>
+                                    </tr>
+                                    
+                                    <tr><td colSpan="2" style={{ height: '16px' }}></td></tr>
+                                    
+                                    <tr>
+                                        <td colSpan="2"><strong>GASTOS</strong></td>
+                                    </tr>
+                                    {Object.values(gastos).map(acc => (
+                                        <tr key={acc.code}>
+                                            <td style={{ paddingLeft: '20px' }}>{acc.name}</td>
+                                            <td className="text-right">${acc.balance.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ fontWeight: '700', borderTop: '2px solid var(--gray-300)' }}>
+                                        <td>Total Gastos</td>
+                                        <td className="text-right">${totalGastos.toFixed(2)}</td>
+                                    </tr>
+                                    
+                                    <tr><td colSpan="2" style={{ height: '8px' }}></td></tr>
+                                    
+                                    <tr style={{ fontWeight: '700', borderTop: '3px double var(--primary)', color: utilidadNeta >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                                        <td>{utilidadNeta >= 0 ? 'Utilidad Neta' : 'Pérdida Neta'}</td>
+                                        <td className="text-right">${Math.abs(utilidadNeta).toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        function BackupModal({ onClose, exportData, importData, shareWhatsApp }) {
+            const handleFileSelect = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    importData(file);
+                    onClose();
+                }
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Respaldos</h2>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <div className="info-box">
+                            <p>💡 <strong>Recomendación:</strong> Exporta tus datos regularmente.</p>
+                        </div>
+                        
+                        <div className="menu-item" onClick={() => { exportData(); onClose(); }}>
+                            <div className="menu-icon">💾</div>
+                            <div>
+                                <div style={{ fontWeight: '700' }}>Exportar Datos</div>
+                                <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>Descargar JSON</div>
+                            </div>
+                        </div>
+                        
+                        <div className="file-input-wrapper">
+                            <input 
+                                type="file" 
+                                id="file-import" 
+                                accept=".json"
+                                onChange={handleFileSelect}
+                            />
+                            <label htmlFor="file-import" className="file-input-label">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '20px' }}>📂</span>
+                                    <div>
+                                        <div style={{ fontWeight: '700' }}>Importar Datos</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>Restaurar</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div className="menu-item" onClick={() => { shareWhatsApp(); onClose(); }}>
+                            <div className="menu-icon">💬</div>
+                            <div>
+                                <div style={{ fontWeight: '700' }}>WhatsApp</div>
+                                <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>Compartir resumen</div>
+                            </div>
+                        </div>
+                        
+                        <button className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }} onClick={onClose}>
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./service-worker.js');
+  });
+}
+</script>
+
+</body>
+</html>
